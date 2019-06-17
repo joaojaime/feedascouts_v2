@@ -13,6 +13,7 @@ import Button from 'react-bootstrap/Button'
 import {withRouter} from 'react-router-dom';
 import TeamsStep from '../TeamsStep';
 import { RecipeAddCard, RecipeRmvCard } from './RecipeCards';
+import RecipeModal from './../../recipe-modal/RecipeModal';
 
 
 class RecipesStep extends Component {
@@ -23,8 +24,61 @@ class RecipesStep extends Component {
             recipesList: props.recipesList,
             recipesForSelection: [],
             recipesSelected: [],
-            totalTeamsNrPeople: 0
+            recipesForSelectionFiltered: props.recipesForSelection,
+            totalTeamsNrPeople: 0,
+            showModal: false,
+            currModalRecipe: {}
         }
+    }
+
+    componentDidUpdate(prevProps){
+        if(prevProps.recipesForSelection != this.props.recipesForSelection){
+            this.setState({ 
+                recipesForSelectionFiltered: this.props.recipesForSelection
+            });
+        }
+    }
+
+    handleModalOpen = (id) => {
+        const db = firebase.firestore();
+        db.collection("recipes").doc(id)
+            .get()
+            .then( (doc) => {
+                let recipe = {
+                    ...doc.data(),
+                    id: doc.id
+                };
+
+                this.setState({ 
+                    showModal: true,
+                    currModalRecipe: recipe 
+                });
+            })
+            .catch(function(error) {
+                console.log("Error getting documents: ", error);
+            });
+    }
+
+    handleModalClose = () => {
+        this.setState({ 
+            showModal: false
+        });
+    }
+
+    handleRecipeFilter = (e) => {
+        let filter = e.target.value;
+        console.log('filter: ', filter)
+        let recipesForSelectionFiltered = this.props.recipesForSelection;
+        console.log('a: ', recipesForSelectionFiltered)
+
+        recipesForSelectionFiltered = recipesForSelectionFiltered.filter( x => x.recipe.name.toLowerCase().indexOf(filter.toLowerCase()) !== -1 );
+        console.log('b: ', recipesForSelectionFiltered)
+
+        this.setState({ 
+            recipeFilter: filter,
+            recipesForSelectionFiltered: recipesForSelectionFiltered
+        });
+
     }
 
     addRecipeToMenu = (name) =>
@@ -34,9 +88,9 @@ class RecipesStep extends Component {
         this.props.rmvRecipeFromMenu(name)
 
     renderRecipesForSelection = () => 
-        this.props.recipesForSelection.map( item => 
+        this.state.recipesForSelectionFiltered.map( item => 
             <RecipeAddCard key={item.recipe.id} recipeObj={item}
-                handleClick={this.addRecipeToMenu} handleRecipeNrPeople={this.props.handleRecipeNrPeople} 
+                handleClick={this.addRecipeToMenu} handleRecipeNrPeople={this.props.handleRecipeNrPeople} handleTitleClick={this.handleModalOpen}
             /> )
 
     renderRecipesSelected = () => 
@@ -50,7 +104,18 @@ class RecipesStep extends Component {
             <>
             <Row>
                 <Col md={6}>
-                    <h6><strong>Receitas disponíveis</strong></h6>
+                    <Row>
+                    <Col md='4'>
+                        <h6><strong>Receitas disponíveis</strong></h6>
+                    </Col>
+                    
+                    <Col md={{span: 4, offset: 3}} className='float-right'>
+                        <FormBS.Group controlId="filterRecipes">
+                            <FormBS.Control type="text" value={this.state.recipeFilter} onChange={this.handleRecipeFilter} placeholder="Filtrar..." />
+                        </FormBS.Group>
+                    </Col>
+                    </Row>
+                   
                     {loaded && this.renderRecipesForSelection()}
                 </Col>
                 <Col md={6}>
@@ -58,6 +123,10 @@ class RecipesStep extends Component {
                     {loaded && this.renderRecipesSelected()}
                 </Col>
             </Row>
+            {
+                this.state.showModal &&
+                <RecipeModal show={true} recipe={this.state.currModalRecipe} handleClose={this.handleModalClose} />
+            }
             </>
         );
     }

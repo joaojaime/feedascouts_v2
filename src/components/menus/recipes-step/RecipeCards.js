@@ -5,7 +5,7 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
 export const RecipeAddCard = (props) => {
-    let { recipeObj, handleClick, handleRecipeNrPeople } = props;
+    let { recipeObj, handleClick, handleRecipeNrPeople, handleTitleClick } = props;
     let recipe = recipeObj.recipe;
 
     return(
@@ -15,7 +15,7 @@ export const RecipeAddCard = (props) => {
                     <div className="row no-gutters">
                         <Col md={8} >
                             <div className="text-xs font-weight-bold text-primary mb-1">by: {recipe.creator}</div>
-                            <div className="h5 mb-0 font-weight-bold text-gray-800">{recipe.name}</div>
+                            <a href='#'><div className="h5 mb-0 font-weight-bold text-gray-800" onClick={() => handleTitleClick(recipe.id)}>{recipe.name}</div></a>
                         </Col>
                         <Col md={4} >
                             <Row >
@@ -50,7 +50,7 @@ export const RecipeRmvCard = (props) => {
                 <div className="card-body">
                     <div className="row no-gutters">
                         <Col md={8} >
-                            <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">by: {recipe.creator}</div>
+                            <div className="text-xs font-weight-bold text-primary mb-1">by: {recipe.creator}</div>
                             <div className="h5 mb-0 font-weight-bold text-gray-800">{recipe.name}</div>
                         </Col>
                         <Col md={4} >

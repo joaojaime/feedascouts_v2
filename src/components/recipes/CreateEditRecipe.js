@@ -12,25 +12,77 @@ import Button from 'react-bootstrap/Button'
 
 import {withRouter} from 'react-router-dom';
 
-class CreateRecipe extends Component {
+class CreateEditRecipe extends Component {
     constructor(props) {
         super(props);
-        this.state = {  }
+        this.state = {
+            isEditMode: this.props.match.params.id ? true : false,
+            currRecipe: {},
+            currRecipeId: this.props.match.params.id ? this.props.match.params.id : ''
+        }
     }
 
+    componentDidMount() {
+        let isEditMode = this.state.isEditMode;
+        let currRecipeId = this.state.currRecipeId;
+
+        if(isEditMode){
+            let currRecipe;
+
+            const db = firebase.firestore();
+            db.collection('recipes').doc(currRecipeId)
+                .get()
+                .then(response => {
+                    currRecipe = {
+                        ...response.data(),
+                        id: response.id
+                    };
+
+                    this.setState({ 
+                        currRecipe: currRecipe 
+                    });
+                }).catch( err => {
+                    console.log('Erro: ', err)
+                }); 
+        }
+    }
+    
+
     render() {
+
+        let currRecipe = this.state.currRecipe;
+        let currRecipeId = this.state.currRecipeId;
+        let isEditMode = this.state.isEditMode;
+
+        let extraQbFieldFeature = isEditMode ? {} : { defaultValue: false }
+        console.log('extra: ', extraQbFieldFeature)
+
         const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
-        const onSubmit = async values => {
+        const onCreate = async values => {
             await sleep(300)
             const firestore = firebase.firestore();
-            const id = { id: uuid() };
         
             firestore.collection('recipes').add({
-              ...values, ...id
+              ...values
             }).then(() => {
                 window.alert('Receita criada com sucesso!')
-                this.props.history.replace("/")
+                this.props.history.replace("/recipes")
+        
+            }).catch(err => {
+                window.alert('Erro: ', err)
+            });
+        }
+
+        const onEdit = async values => {
+            await sleep(300)
+            const firestore = firebase.firestore();
+        
+            firestore.collection('recipes').doc(currRecipeId).update({
+              ...values
+            }).then(() => {
+                window.alert('Receita editada com sucesso!')
+                this.props.history.replace("/recipes")
         
             }).catch(err => {
                 window.alert('Erro: ', err)
@@ -39,8 +91,10 @@ class CreateRecipe extends Component {
 
         return (
         <Form
-            onSubmit={onSubmit}
-            initialValues={{ }}
+            onSubmit={isEditMode ? onEdit : onCreate}
+            initialValues={{
+                ...currRecipe
+            }}
             mutators={{
                 ...arrayMutators
               }}
@@ -53,7 +107,7 @@ class CreateRecipe extends Component {
             }) => 
             (
                 <form onSubmit={handleSubmit}>
-                    <h1>Criar Receita</h1>
+                    <h1>{isEditMode ? 'Editar Receita' : 'Criar Receita'}</h1>
                     <div>
                         <Row>
                         <Field
@@ -107,7 +161,7 @@ class CreateRecipe extends Component {
                                     component="input"
                                     type="checkbox"
                                     placeholder="q.b."
-                                    defaultValue={false}
+                                    {...extraQbFieldFeature}
                                     />
                                     q.b.?
                                     </label>
@@ -151,11 +205,11 @@ class CreateRecipe extends Component {
                     variant='primary' type='submit'
                     style={{marginRight: '5px'}}
                     >
-                        Guardar
+                        {isEditMode ? 'Guardar' : 'Criar'}
                     </Button>
                     <Button
-                    variant='outline-secondary' type='button'
-                    className=''
+                        variant='outline-secondary' type='button'
+                        onClick={ () => this.props.history.replace("/recipes") }
                     >
                         Cancelar
                     </Button>
@@ -166,15 +220,15 @@ class CreateRecipe extends Component {
     }
 }
  
-export default withRouter(CreateRecipe);
+export default withRouter(CreateEditRecipe);
 
-const Condition = ({ when, is, children }) => (
+export const Condition = ({ when, is, children }) => (
     <Field name={when} subscription={{ value: true }}>
       {({ input: { value } }) => (value === is ? children : null)}
     </Field>
   )
 
-const InputRecipeName = ({ input, ...rest }) =>
+export const InputRecipeName = ({ input, ...rest }) =>
     <Col md={4} {...input} {...rest}>
         <FormBS.Group controlId="recipeName">
             <FormBS.Label><strong>Nome da Receita</strong></FormBS.Label>
@@ -182,7 +236,7 @@ const InputRecipeName = ({ input, ...rest }) =>
         </FormBS.Group>
     </Col>
 
-const InputNrPeople = ({ input, ...rest }) =>
+export const InputNrPeople = ({ input, ...rest }) =>
     <Col md={2} {...input} {...rest}>
         <FormBS.Group controlId="nrPeople">
             <FormBS.Label><strong>Nº Pessoas</strong></FormBS.Label>
@@ -190,7 +244,7 @@ const InputNrPeople = ({ input, ...rest }) =>
         </FormBS.Group>
     </Col>
 
-const InputCreatorName = ({ input, ...rest }) =>
+export const InputCreatorName = ({ input, ...rest }) =>
     <Col md={{span: 2, offset: 2}} {...input} {...rest}>
         <FormBS.Group controlId="creator">
             <FormBS.Label><strong>Criado por</strong></FormBS.Label>
@@ -198,21 +252,21 @@ const InputCreatorName = ({ input, ...rest }) =>
         </FormBS.Group>
     </Col>
 
-const InputIngName = ({ input, ...rest }) =>
+export const InputIngName = ({ input, ...rest }) =>
     <Col md={2} {...input} {...rest}>
         <FormBS.Group controlId="ingName">
             <FormBS.Control type="text" value={input.value} placeholder="Nome" />
         </FormBS.Group>
     </Col>
 
-const InputIngQnt = ({ input, ...rest }) =>
+export const InputIngQnt = ({ input, ...rest }) =>
     <Col md={1} {...input} {...rest}>
         <FormBS.Group controlId="ingQtd">
             <FormBS.Control type="number" value={input.value} placeholder="Qtd." />
         </FormBS.Group>
     </Col>
 
-const InputSelMeasure = ({ input, ...rest }) =>
+export const InputSelMeasure = ({ input, ...rest }) =>
     <Col md={2} {...input} {...rest}>
         <FormBS.Group controlId="selMeasure">
             <FormBS.Control as="select" value={input.value} >
