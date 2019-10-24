@@ -9,6 +9,7 @@ import {withRouter} from 'react-router-dom';
 import TeamsStep from './TeamsStep';
 import RecipesStep from './recipes-step/RecipesStep';
 import createShoppingList from '../../scripts/createShoppingList';
+import { downloadCSV } from '../../scripts/csvHelper';
 
 class EditMenu extends Component {
     constructor(props) {
@@ -76,6 +77,26 @@ class EditMenu extends Component {
         });
     }
 
+    handleCSVDownload = () => {
+
+        if(!this.shoppingList){
+            window.alert('Por favor, clicka em "Guardar" antes do download')
+        }else{
+            const data = {
+                headers: [
+                    'Nome', 'Qtd', 'Medida', 'Qb?'
+                ],
+                rows: this.shoppingList.map(ing => ([
+                    ing.name,
+                    ing.qtd,
+                    ing.measure,
+                    ing.qb
+                ]))
+              };
+            downloadCSV('shopping_list.csv', data);
+        }
+    }
+
     handleRecipeNrPeople = (e) => {
         this.setState({ 
             menuNrPeopleList: {
@@ -131,7 +152,7 @@ class EditMenu extends Component {
         const onSubmit = async values => {
             await sleep(300)
 
-            createShoppingList( {...values, recipes: recipesSelected} );
+            this.shoppingList = createShoppingList( {...values, recipes: recipesSelected} );
 
             const firestore = firebase.firestore();
 
@@ -140,7 +161,7 @@ class EditMenu extends Component {
               recipes: recipesSelected
             }).then(() => {
                 window.alert('Ementa editada com sucesso!');
-                this.props.history.replace("/menus");
+                // this.props.history.replace("/menus");
             }).catch(err => {
                 window.alert('Erro: ', err)
             });
@@ -185,11 +206,17 @@ class EditMenu extends Component {
                             Guardar
                         </Button>
                         <Button
-                            variant='outline-secondary' type='button' className=''
+                            variant='outline-primary' type='button' className='' style={{marginRight: '5px'}}
+                            onClick={this.handleCSVDownload}
+                        >
+                            Download
+                        </Button>
+                        <Button
+                            variant='outline-secondary' type='button' 
                             onClick={ () => this.props.history.replace("/menus") }
                         >
                             Cancelar
-                        </Button>
+                        </Button>    
                     </form>
                 )}
                 />

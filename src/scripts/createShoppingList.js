@@ -21,6 +21,7 @@ const createShoppingList = (menu) => {
     })
 
     console.log('shoppinglist: ', shoppingList)
+    return shoppingList;
 }
 
 const addToShoppingList = (shoppingList, newIng) => {
